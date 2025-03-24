@@ -299,7 +299,7 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
             self.lineEdit_boundary.setText(mf_bd_gpkg)
 
     # NOTE: clear about gpkg or shp
-    def use_sub_shapefile_bak(self):
+    def use_sub_shapefile(self):
         QSWATMOD_path_dict = self.dirs_and_paths()
 
         try:
