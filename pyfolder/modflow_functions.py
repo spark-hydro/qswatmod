@@ -633,7 +633,7 @@ def overwriteRivPac(self):
     QSWATMOD_path_dict = self.dirs_and_paths()
     # try:
     if self.dlg.radioButton_mf_riv2.isChecked():
-        self.layer = self.mf_riv2_layer()
+        self.layer = mf_riv2_layer(self)
     elif self.dlg.radioButton_mf_riv3.isChecked():
         self.layer = QgsProject.instance().mapLayersByName("mf_riv3 (MODFLOW)")[0]
     provider = self.layer.dataProvider()
@@ -782,7 +782,7 @@ def rivInfoTo_mf_riv2(self):
     riv2_bot_lst = riv2_bot.tolist()
 
     # Part II ---------------------------------------------------------------
-    self.layer = self.mf_riv2_layer()
+    self.layer = mf_riv2_layer(self)
     provider2 = self.layer.dataProvider()
 
     # from qgis.core import QgsField, QgsExpression, QgsFeature
@@ -832,6 +832,14 @@ def river_grid_layer(self):
     output_file_v = os.path.normpath(os.path.join(output_dir, name_ext_v))
     layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("river_grid","SWAT-MODFLOW"), 'ogr')
     return layer   
+
+def mf_riv2_layer(self):
+    QSWATMOD_path_dict = self.dirs_and_paths()
+    output_dir = QSWATMOD_path_dict['org_shps']
+    name_ext_v = 'mf_riv2.gpkg'
+    output_file_v = os.path.normpath(os.path.join(output_dir, name_ext_v))
+    layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("mf_riv2","MODFLOW"), 'ogr')
+    return layer
 
 
 def rivInfoTo_mf_riv2_ii(self):
@@ -901,7 +909,7 @@ def rivInfoTo_mf_riv2_ii(self):
     riv2_bot_lst = riv2_bot.tolist()
 
     # Part II ---------------------------------------------------------------
-    self.layer = self.mf_riv2_layer()
+    self.layer = mf_riv2_layer(self)
     provider2 = self.layer.dataProvider()
 
     # from qgis.core import QgsField, QgsExpression, QgsFeature
@@ -946,7 +954,7 @@ def rivInfoTo_mf_riv2_ii(self):
 
 def riv_cond_delete_NULL(self):
     if self.dlg.radioButton_mf_riv2.isChecked():
-        layer = self.mf_riv2_layer()
+        layer = mf_riv2_layer(self)
 
     provider = layer.dataProvider()
     request =  QgsFeatureRequest().setFilterExpression("riv_cond IS NULL" )
