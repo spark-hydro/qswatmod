@@ -1130,11 +1130,11 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         elif (self.radioButton_hk_raster.isChecked() and self.lineEdit_hk_raster.text()):
             writeMF.get_geovar_fromR(self, geovar="hk")
             writeMF.cvt_geovarToR(self, geovar="hk")
-            self.progressBar_mf.setValue(30)
-            QCoreApplication.processEvents()
         else:
-            self.progressBar_mf.setValue(40)
+            self.progressBar_mf.setValue(25)
             QCoreApplication.processEvents()
+        self.progressBar_mf.setValue(30)
+        QCoreApplication.processEvents()
 
         # SS
         if (self.radioButton_ss_single.isChecked() and self.lineEdit_ss_single.text()):
@@ -1143,11 +1143,11 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         elif (self.radioButton_ss_raster.isChecked() and self.lineEdit_ss_raster.text()):
             writeMF.get_geovar_fromR(self, geovar="ss")
             writeMF.cvt_geovarToR(self, geovar="ss")
-            self.progressBar_mf.setValue(50)
-            QCoreApplication.processEvents()
         else:
-            self.progressBar_mf.setValue(60)
+            self.progressBar_mf.setValue(45)
             QCoreApplication.processEvents()
+        self.progressBar_mf.setValue(50)
+        QCoreApplication.processEvents()
 
         # SY
         if (self.radioButton_sy_single.isChecked() and self.lineEdit_sy_single.text()):
@@ -1156,12 +1156,11 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         elif (self.radioButton_sy_raster.isChecked() and self.lineEdit_sy_raster.text()):
             writeMF.get_geovar_fromR(self, geovar="sy")
             writeMF.cvt_geovarToR(self, geovar="sy")
-            self.progressBar_mf.setValue(80)
-            QCoreApplication.processEvents()
         else:
-            self.progressBar_mf.setValue(85)
+            self.progressBar_mf.setValue(65)
             QCoreApplication.processEvents()
-        
+        self.progressBar_mf.setValue(70)
+        QCoreApplication.processEvents()        
         # IH
         if (self.radioButton_initialH_single.isChecked() or self.radioButton_initialH_uniform.isChecked()):
             writeMF.createInitialH(self)
@@ -1169,12 +1168,11 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         elif (self.radioButton_initialH_raster.isChecked() and self.lineEdit_initialH_raster.text()):
             writeMF.get_geovar_fromR(self, geovar="ih")
             writeMF.cvt_geovarToR(self, geovar="ih")        
-            self.progressBar_mf.setValue(90)
-            QCoreApplication.processEvents()
         else:
-            self.progressBar_mf.setValue(95)
+            self.progressBar_mf.setValue(80)
             QCoreApplication.processEvents()
-
+        self.progressBar_mf.setValue(85)
+        QCoreApplication.processEvents()
         # EVT
         if self.groupBox_evt.isChecked():
             if (self.radioButton_evt_single.isChecked() and self.lineEdit_evt_single.text()):
@@ -1187,8 +1185,7 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
                 QCoreApplication.processEvents()
             else:
                 self.progressBar_mf.setValue(85)
-                QCoreApplication.processEvents()
-                
+                QCoreApplication.processEvents()           
         writeMF.writeMFmodel(self)
         self.progressBar_mf.setValue(100)
         self.checkBox_mfPrepared.setChecked(1)

@@ -506,7 +506,6 @@ def createInitialH(self):
                 f['ih'] = - depth + f['top_elev']
                 self.layer.updateFeature(f)
             self.layer.commitChanges()
-            start_time(self, desc)
         # Uniform value
         elif (self.radioButton_initialH_uniform.isChecked() and self.lineEdit_initialH_uniform.text()):
             elev = float(self.lineEdit_initialH_uniform.text())
@@ -514,11 +513,11 @@ def createInitialH(self):
                 f['ih'] = elev
                 self.layer.updateFeature(f)
             self.layer.commitChanges()
-            start_time(self, desc)
         else:
             messageBox(self, "Oops!", "Please, provide a value of the Initial Hydraulic Head!")
     except:
         messageBox(self, "Oops!", "ERROR!!!")
+    end_time(self, desc)
 
 
 def createEVT(self):
@@ -548,11 +547,19 @@ def createEVT(self):
     except:
         messageBox(self, "Oops!", "ERROR!!!")
 
-def create_layer_inRiv(self):
-    
-    self.layer = self.mf_riv2_layer()
-    provider = self.layer.dataProvider()
 
+def mf_riv2_layer(self):
+    QSWATMOD_path_dict = self.dirs_and_paths()
+    output_dir = QSWATMOD_path_dict['org_shps']
+    name_ext_v = 'mf_riv2.gpkg'
+    output_file_v = os.path.normpath(os.path.join(output_dir, name_ext_v))
+    layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("mf_riv2","MODFLOW"), 'ogr')
+    return layer
+
+
+def create_layer_inRiv(self):
+    self.layer = mf_riv2_layer(self)
+    provider = self.layer.dataProvider()
     if self.layer.dataProvider().fields().indexFromName( "layer" ) == -1:
         field = QgsField("layer", QVariant.Int)
         provider.addAttributes([field])
