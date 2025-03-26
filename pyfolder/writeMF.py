@@ -506,7 +506,6 @@ def createInitialH(self):
                 f['ih'] = - depth + f['top_elev']
                 self.layer.updateFeature(f)
             self.layer.commitChanges()
-            start_time(self, desc)
         # Uniform value
         elif (self.radioButton_initialH_uniform.isChecked() and self.lineEdit_initialH_uniform.text()):
             elev = float(self.lineEdit_initialH_uniform.text())
@@ -514,11 +513,11 @@ def createInitialH(self):
                 f['ih'] = elev
                 self.layer.updateFeature(f)
             self.layer.commitChanges()
-            start_time(self, desc)
         else:
             messageBox(self, "Oops!", "Please, provide a value of the Initial Hydraulic Head!")
     except:
         messageBox(self, "Oops!", "ERROR!!!")
+    end_time(self, desc)
 
 
 def createEVT(self):
