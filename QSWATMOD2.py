@@ -1524,7 +1524,8 @@ class QSWATMOD2(object):
             post_i_sw.read_sub_no(self)
 
             layer.selectAll()
-            clone_layer = processing.run("native:saveselectedfeatures", {'INPUT': layer, 'OUTPUT': f"memory:{'sub (link)'}"})['OUTPUT']
+            outnam = "sub (link)"
+            clone_layer = processing.run("native:saveselectedfeatures", {'INPUT': layer, 'OUTPUT': f"memory:{outnam}"})['OUTPUT']
             layer.removeSelection()
         
             QgsProject.instance().addMapLayer(clone_layer, False)
@@ -1594,7 +1595,8 @@ class QSWATMOD2(object):
             self.mfOptionOn() # enable
 
             layer.selectAll()
-            clone_layer = processing.run("native:saveselectedfeatures", {'INPUT': layer, 'OUTPUT': f"memory:{'riv (link)'}"})['OUTPUT']
+            outnam = "riv (link)"
+            clone_layer = processing.run("native:saveselectedfeatures", {'INPUT': layer, 'OUTPUT': f"memory:{outnam}"})['OUTPUT']
             layer.removeSelection()
         
             QgsProject.instance().addMapLayer(clone_layer, False)

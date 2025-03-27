@@ -385,13 +385,14 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         MF_extent = "{a},{b},{c},{d}".format(a=xmin, b=xmax, c=ymin, d=ymax)
         crs = input1.crs()
         # running the acutal routine:
+        outnam = 'mf_grid (MODFLOW)'
         params_ = {
             'TYPE': 2,
             'EXTENT': MF_extent,
             'HSPACING': delc,
             'VSPACING': delr,
             'CRS': crs,
-            'OUTPUT': f"memory:{'mf_grid (MODFLOW)'}"
+            'OUTPUT': f"memory:{outnam}"
         }
 
         mf_grid_lyr = processing.run("native:creategrid", params_)

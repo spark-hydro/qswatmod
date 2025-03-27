@@ -195,9 +195,10 @@ def multipart_to_singlepart(self):
     start_time(self, "Disaggregating HRUs")
     layer = QgsProject.instance().mapLayersByName("hru (link)")[0]
     # runinng the actual routine:
+    outnam = "dhru (link)"
     params = {
         'INPUT': layer,
-        'OUTPUT': f"memory:{"dhru (link)"}"
+        'OUTPUT': f"memory:{outnam}"
     }
     outlayer = processing.run("qgis:multiparttosingleparts", params)
     outlayer = outlayer['OUTPUT']
@@ -210,7 +211,9 @@ def multipart_to_singlepart(self):
     end_time(self, "Disaggregating HRUs")
 
 def create_temp_id(self):
+    start_time(self, "Creating 'temporary ID'")
     layer = QgsProject.instance().mapLayersByName("dhru (link)")[0]
+    outnam = "dhru (link)"
     params = {
         'INPUT': layer,
         'FIELD_NAME': 'tid',
@@ -218,7 +221,7 @@ def create_temp_id(self):
         'FIELD_LENGTH': 0,
         'FIELD_PRECISION': 0,
         'FORMULA': '$id',
-        'OUTPUT': f"memory:{"dhru (link)"}"
+        'OUTPUT': f"memory:{outnam}"
     }
     outlayer = processing.run("native:fieldcalculator", params)
     outlayer = outlayer['OUTPUT']
@@ -231,9 +234,11 @@ def create_temp_id(self):
     sm_group = root.findGroup("SWAT-MODFLOW")
     QgsProject.instance().addMapLayer(outlayer, False)
     sm_group.insertChildNode(1, QgsLayerTreeLayer(outlayer))
+    end_time(self, "Creating 'temporary ID'")
     self.iface.mapCanvas().refreshAllLayers()
 
 def create_dhru_id(self):
+    start_time(self, "Creating 'dhru ID'")
     layer = QgsProject.instance().mapLayersByName("dhru (link)")[0]
     data = get_attribute_to_dataframe(self, layer)
     data_sorted = data.sort_values(by=['HRU_ID'])
@@ -253,6 +258,7 @@ def create_dhru_id(self):
     vl.commitChanges()
     QgsProject.instance().addMapLayer(vl)
     dhru_table = QgsProject.instance().mapLayersByName("tt")[0]
+    outnam = "dhru (link)"
     params = {
         'INPUT': layer.source(),
         'FIELD': 'tid',
@@ -262,7 +268,7 @@ def create_dhru_id(self):
         'METHOD': 1,
         'DISCARD_NONMATCHING': False,
         'PREFIX': '',
-        'OUTPUT': f"memory:{"dhru (link)"}"
+        'OUTPUT': f"memory:{outnam}"
     }
     outlayer = processing.run("native:joinattributestable", params)['OUTPUT']
     # Put in the group
@@ -274,6 +280,7 @@ def create_dhru_id(self):
     sm_group = root.findGroup("SWAT-MODFLOW")
     QgsProject.instance().addMapLayer(outlayer, False)
     sm_group.insertChildNode(1, QgsLayerTreeLayer(outlayer))
+    end_time(self, "Creating 'dhru ID'")
     self.iface.mapCanvas().refreshAllLayers()
     
 def cvt_vl_to_gpkg(self, layernam, output_file):
@@ -317,10 +324,11 @@ def hru_dhru(self):
     input2 = QgsProject.instance().mapLayersByName("sub (link)")[0]    
 
     # runinng the actual routine:
+    outnam = "hru_dhru (SWAT-MODFLOW)"
     params = {
         'INPUT': input1,
         'OVERLAY': input2,
-        'OUTPUT': f"memory:{"hru_dhru (SWAT-MODFLOW)"}"
+        'OUTPUT': f"memory:{outnam}"
     }
     outlayer = processing.run("native:intersection", params)
     outlayer = outlayer['OUTPUT']
@@ -357,10 +365,11 @@ def dhru_grid(self):
     start_time(self, "Intersecting DHRUs by GRIDs")
     input1 = QgsProject.instance().mapLayersByName("dhru (link)")[0]
     input2 = QgsProject.instance().mapLayersByName("mf_grid (MODFLOW)")[0]
+    outnam = "dhru_grid (SWAT-MODFLOW)"
     params = {
         'INPUT': input1,
         'OVERLAY': input2,
-        'OUTPUT': f"memory:{"dhru_grid (SWAT-MODFLOW)"}"
+        'OUTPUT': f"memory:{outnam}"
     }
     outlayer = processing.run("native:intersection", params)
     outlayer = outlayer['OUTPUT']
