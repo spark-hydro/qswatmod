@@ -33,12 +33,12 @@ def end_time(self, desc):
     self.dlg.progressBar_step.setValue(100)
     QCoreApplication.processEvents()
 
-def messageBox(self, title, message):
-    msgBox = QMessageBox()
-    msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))  
-    msgBox.setWindowTitle(title)
-    msgBox.setText(message)
-    msgBox.exec_()
+# def messageBox(self, title, message):
+#     msgBox = QMessageBox()
+#     msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))  
+#     msgBox.setWindowTitle(title)
+#     msgBox.setText(message)
+#     msgBox.exec_()
 
 def get_attribute_to_dataframe(self, layer):
     #List all columns you want to include in the dataframe. I include all with:
@@ -309,9 +309,6 @@ def cvt_vl_to_gpkg(self, layernam, output_file):
     self.iface.mapCanvas().refreshAllLayers()
 
 
-
-
-
 # processing.run(
 #     "native:savefeatures", 
 #     {'INPUT':'memory://MultiPolygon?crs=EPSG:5070&field=HRU_ID:integer(0,0)&field=hru_area:double(0,2)&field=tid:double(0,0)&field=dhru_id:double(0,0)&field=dhru_area:double(0,2)&field=fid:long(0,0)&field=grid_id:integer(0,0)&field=row:integer(0,0)&field=col:integer(0,0)&field=top_elev:double(0,0)&field=ol_area:double(0,2)&uid={28f8f565-083f-4a9e-99fe-579a7743e332}','OUTPUT':'D:/Projects/temp_qswatmod/tttt.gpkg',
@@ -433,13 +430,7 @@ def river_grid(self): #step 1
         input1 = QgsProject.instance().mapLayersByName("riv (SWAT)")[0]
         input2 = QgsProject.instance().mapLayersByName("mf_riv3 (MODFLOW)")[0]
     else:
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-        msgBox.setMaximumSize(1000, 200) # resize not working
-        msgBox.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) # resize not working
-        msgBox.setWindowTitle("Hello?")
-        msgBox.setText("Please, select one of the river options!")
-        msgBox.exec_()
+        self.main_messageBox("Hello?", "Please, select one of the river options!")
 
     name = "river_grid"
     name_ext = "river_grid.gpkg"
@@ -1258,8 +1249,4 @@ def create_rt3d_grid(self):
         rt3d_inputs = root.findGroup("RT3D")   
         QgsProject.instance().addMapLayer(layer, False)
         rt3d_inputs.insertChildNode(0, QgsLayerTreeLayer(layer))
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(':/QSWATMOD/pics/am_icon.png'))
-        msgBox.setWindowTitle("Created!")
-        msgBox.setText("'rt3d_grid.shp' file has been created in 'RT3D' group!")
-        msgBox.exec_()
+        self.main_messageBox("Created!", "'rt3d_grid.shp' file has been created in 'RT3D' group!")

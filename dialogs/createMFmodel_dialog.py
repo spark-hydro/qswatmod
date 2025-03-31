@@ -217,8 +217,8 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         self.lineEdit_hk_raster.setText(geovar_path)
 
     def loadBotElev(self):
-        geovar_path = writeMF.load_geovar_raster(self, geovar='evt')
-        self.lineEdit_evt_raster.setText(geovar_path)
+        geovar_path = writeMF.load_geovar_raster(self, geovar='bot_elev')
+        self.lineEdit_aq_thic_raster.setText(geovar_path)
 
     def loadSS(self):
         geovar_path = writeMF.load_geovar_raster(self, geovar='ss')
@@ -1115,14 +1115,27 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
         self.checkBox_mfPrepared.setChecked(0)
         self.progressBar_mf.setValue(0)
 
-        # Bottom
+        # bottom elevation
         if (self.radioButton_aq_thic_single.isChecked() or self.radioButton_aq_thic_uniform.isChecked()):
-            writeMF.createBotElev(self) # create bottom elevation in mf_act_grid_layer
-            self.progressBar_mf.setValue(10)
+            writeMF.createBotElev(self)
+            writeMF.cvt_geovarToR(self, geovar="bot_elev")
+        elif (self.radioButton_aq_thic_raster.isChecked() and self.lineEdit_aq_thic_raster.text()):
+            writeMF.get_geovar_fromR(self, geovar="bot_elev")
+            writeMF.cvt_geovarToR(self, geovar="bot_elev")
+        else:
+            self.progressBar_mf.setValue(5)
             QCoreApplication.processEvents()
-            writeMF.cvtBotElevToR(self) # convert bottom elevation to raster
-            self.progressBar_mf.setValue(20)
-            QCoreApplication.processEvents()
+        self.progressBar_mf.setValue(10)
+        QCoreApplication.processEvents()
+
+        # Bottom
+        # if (self.radioButton_aq_thic_single.isChecked() or self.radioButton_aq_thic_uniform.isChecked()):
+        #     writeMF.createBotElev(self) # create bottom elevation in mf_act_grid_layer
+        #     self.progressBar_mf.setValue(10)
+        #     QCoreApplication.processEvents()
+        #     writeMF.cvtBotElevToR(self) # convert bottom elevation to raster
+        #     self.progressBar_mf.setValue(20)
+        #     QCoreApplication.processEvents()
             
         # HK
         if (self.radioButton_hk_single.isChecked() and self.lineEdit_hk_single.text()):

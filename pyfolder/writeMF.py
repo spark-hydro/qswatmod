@@ -230,7 +230,7 @@ def cvt_geovarToR(self, geovar, geovar_group="MODFLOW"):
     start_time(self, desc)
     QSWATMOD_path_dict = self.dirs_and_paths()
     for lyr in list(QgsProject.instance().mapLayers().values()):
-        if lyr.name() == (f"{geovar} ({geovar_group}"):
+        if lyr.name() == f"{geovar} ({geovar_group})":
             QgsProject.instance().removeMapLayers([lyr.id()])
     extlayer = self.mf_grid_layer()
     input1 = self.mf_act_grid_layer()

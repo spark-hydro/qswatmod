@@ -422,6 +422,15 @@ class QSWATMOD2(object):
             # substitute with your code.
             pass
 
+    def main_messageBox(self, title, message):
+        msgBox = QMessageBox()
+        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))  
+        msgBox.setWindowTitle(title)
+        msgBox.setText(message)
+        msgBox.exec_()
+
+
+
     def activate_execute_linking(self):
         if self.dlg.checkBox_filesPrepared.isChecked():
             self.dlg.pushButton_execute_linking.setEnabled(False)
@@ -1413,8 +1422,7 @@ class QSWATMOD2(object):
                                                 "HRU_ID", "hru_area", "dhru_id", "dhru_area"])
             linking_process.cvt_vl_to_gpkg(self, "dhru (link)", "dhru_link.gpkg")
             linking_process.delete_layers(self, ["tt"])
-
-            
+            self.main_messageBox("Done!", "HRU shapefile has been loaded!!")
 
     # navigate to the raster of the hru for SWAT+
     def hru_rasterfile(self):            
@@ -1533,6 +1541,7 @@ class QSWATMOD2(object):
             sm_group.insertChildNode(1, QgsLayerTreeLayer(clone_layer))
             linking_process.filter_required_fields(self, "sub (link)", ["Subbasin"])
             linking_process.cvt_vl_to_gpkg(self, "sub (link)", "sub_link.gpkg")
+            self.main_messageBox("Done!", "SUB shapefile has been loaded!!")
 
 
 
@@ -1605,6 +1614,7 @@ class QSWATMOD2(object):
             required_fields = ["Subbasin", "Len2", "Wid2", "Dep2", "Shape_Leng"]
             linking_process.filter_required_fields(self, "riv (link)", required_fields)
             linking_process.cvt_vl_to_gpkg(self, "riv (link)", "riv_link.gpkg")
+            self.main_messageBox("Done!", "HRU shapefile has been loaded!!")
 
     #----------------------------------------------------------------------------#
     #-----------------------databae features-------------------------------------#
