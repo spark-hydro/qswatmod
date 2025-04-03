@@ -310,7 +310,8 @@ class QSWATMOD2(object):
         self.dlg.comboBox_colormaps.addItems(
             ['gist_rainbow', 'rainbow', 'jet', 'spring', 'summer', 'autumn',
                 'winter', 'cool', 'gray'])
-
+        self.dlg.groupBox_grid_results.toggled.connect(self.load_mf_database)
+        
         # === plot
         self.dlg.pushButton_plot_sd.clicked.connect(self.plot_stf)
         self.dlg.comboBox_stf_obd.currentIndexChanged.connect(self.get_stf_cols)
@@ -694,32 +695,23 @@ class QSWATMOD2(object):
         self.dlg.progressBar_sm_link.setValue(0)
         modflow_functions.import_mf_grid(self)
         self.dlg.progressBar_sm_link.setValue(20)
-        QCoreApplication.processEvents()
-        
+        QCoreApplication.processEvents()        
         # create grid_id
         modflow_functions.create_grid_id(self)
         self.dlg.progressBar_sm_link.setValue(40)
         QCoreApplication.processEvents()
-
         # create additioanl information
         modflow_functions.create_row(self)
         QCoreApplication.processEvents()
         self.dlg.progressBar_sm_link.setValue(60)        
-
         modflow_functions.create_col(self)
         self.dlg.progressBar_sm_link.setValue(80)
         QCoreApplication.processEvents()
-
         modflow_functions.create_top_elev(self)
         self.dlg.progressBar_sm_link.setValue(100)
         QCoreApplication.processEvents()
-
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-        msgBox.setWindowTitle("Imported!")
-        msgBox.setText("'mf_grid' shapefile has been imported!")
-        msgBox.exec_()
-
+        self.main_messageBox("Imported!",
+                             "'mf_grid' shapefile has been imported!")
 
     def river_grid_layer(self):
         QSWATMOD_path_dict = self.dirs_and_paths()
@@ -1725,6 +1717,11 @@ class QSWATMOD2(object):
             if dest_conn:
                 dest_conn.close()
 
+    def load_mf_database(self):
+        if self.dlg.groupBox_grid_results.isChecked():
+            self.check_mf_db()
+            self.check_mf_db_columns()
+            self.main_messageBox("Connected!", "MODFLOW database has been connected!!")
 
     def check_mf_db(self):
         # Check if the database file exists
@@ -1745,7 +1742,7 @@ class QSWATMOD2(object):
         cursor.execute("PRAGMA table_info(mf_db)")
         # Fetch all columns from the table
         columns_info = cursor.fetchall()
-        conn.close()
+        # conn.close()
         colnams = [col[1] for col in columns_info]
         # Check if the required columns exist
 
@@ -1754,7 +1751,7 @@ class QSWATMOD2(object):
             layer = self.mf_grid_layer()
             df = self.get_attribute_to_dataframe(layer)
             df.to_sql('mf_db', conn, if_exists='replace', index=False)
-            conn.close()
+        conn.close()
 
 
 

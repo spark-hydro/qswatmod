@@ -81,6 +81,7 @@ def read_mf_head_dates(self):
 
         
 def get_grid_head_df(self):
+    self.dlg.progressBar_rch_head.setValue(0)
     self.main_messageBox("Reading ...", "We are going to read head outputs ...")
     QSWATMOD_path_dict = self.dirs_and_paths()
     stdate, eddate, stdate_warmup, eddate_warmup = self.define_sim_period()
@@ -99,7 +100,6 @@ def get_grid_head_df(self):
         dateList = pd.date_range(startDate, periods = len(onlyDate), freq = 'ME').strftime("%b-%Y").tolist()
     elif self.dlg.radioButton_mf_results_y.isChecked():
         filename = "swatmf_out_MF_head_yearly"
-        self.layer = QgsProject.instance().mapLayersByName("mf_hd_yearly")[0]
         with open(os.path.join(wd, filename), "r") as f:
             data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
         date = [x.strip().split() for x in data if x.strip().startswith("year:")] # Collect only lines with dates
