@@ -88,6 +88,10 @@ import posixpath
 import ntpath
 import shutil
 import processing
+import sqlite3
+import pandas as pd
+import numpy as np
+
 
 # import matplotlib.pyplot as plt
 # import matplotlib.animation as animation
@@ -326,7 +330,7 @@ class QSWATMOD2(object):
         self.dlg.radioButton_mf_results_d.toggled.connect(self.import_mf_dates)
         self.dlg.radioButton_mf_results_m.toggled.connect(self.import_mf_dates)
         self.dlg.radioButton_mf_results_y.toggled.connect(self.import_mf_dates)
-        self.dlg.checkBox_head.toggled.connect(self.import_mf_dates)
+        # self.dlg.checkBox_head.toggled.connect(self.import_mf_dates)
         self.dlg.pushButton_export_mf_results.clicked.connect(self.export_mf_results)
         # average monthly
         self.dlg.groupBox_hr_avg_mon.toggled.connect(self.get_rech_avg_m_df)
@@ -430,6 +434,12 @@ class QSWATMOD2(object):
         msgBox.exec_()
 
 
+    def delete_layers(self, layernames):
+        for layername in layernames:
+            for lyr in list(QgsProject.instance().mapLayers().values()):
+                if lyr.name() == (layername):
+                    QgsProject.instance().removeMapLayers([lyr.id()])
+        self.iface.mapCanvas().refreshAllLayers()
 
     def activate_execute_linking(self):
         if self.dlg.checkBox_filesPrepared.isChecked():
@@ -450,11 +460,8 @@ class QSWATMOD2(object):
                 wd = QSWATMOD_path_dict['SMfolder']
                 mf_obs = open(os.path.join(wd, "modflow.obs"), "r")
             except:
-                msgBox = QMessageBox()
-                msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-                msgBox.setWindowTitle("No 'modflow.obs' file found!")
-                msgBox.setText("Please, create 'modflow.obs' file first!")
-                msgBox.exec_()
+                self.main_messageBox("No 'modflow.obs' file found!",
+                                    "Please, create 'modflow.obs' file first!")
                 self.dlg.checkBox_mf_obs.setChecked(0)
                 self.dlg.groupBox_plot_wt.setEnabled(False)
         else:
@@ -570,9 +577,6 @@ class QSWATMOD2(object):
         elif  self.dlg.checkBox_nitrate.isChecked() and self.dlg.mGroupBox_rt_avg.isChecked():
             self.export_rt_cno3_avg_m()
 
-
-
-
     def import_mf_dates(self):
         if self.dlg.checkBox_recharge.isChecked():
             self.dlg.radioButton_mf_results_d.setEnabled(True)
@@ -584,7 +588,6 @@ class QSWATMOD2(object):
         elif self.dlg.checkBox_nitrate.isChecked():
             post_vii_nitrate.read_mf_nOflayers(self)
             post_vii_nitrate.read_mf_nitrate_dates(self)
-
 
     def import_mf_gwsw_dates(self):
         post_iv_gwsw.read_mf_gwsw_dates(self)
@@ -1340,7 +1343,7 @@ class QSWATMOD2(object):
         SM_exes = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "SM_exes")
         exported_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "exported_files")
         scn_folder = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "Scenarios")
-
+        db_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "DB")  
         QSWATMOD_path_dict = {
                                 'org_shps': org_shps,
                                 'SMshps': SMshps,
@@ -1348,7 +1351,8 @@ class QSWATMOD2(object):
                                 'Table': Table,
                                 'SM_exes': SM_exes,
                                 'exported_files': exported_files,
-                                'Scenarios': scn_folder}
+                                'Scenarios': scn_folder,
+                                'db_files': db_files}
         return QSWATMOD_path_dict
 
     # navigate to the shapefile of the hru
@@ -1655,6 +1659,103 @@ class QSWATMOD2(object):
     #       QMessageBox.critical(None, "Database Error",
     #           db.lastError().text()) 
     #       return False
+
+    def get_attribute_to_dataframe(self, layer):
+        #List all columns you want to include in the dataframe. I include all with:
+        cols = [f.name() for f in layer.fields()] #Or list them manually: ['kommunnamn', 'kkod', ... ]
+        #A generator to yield one row at a time
+        datagen = ([f[col] for col in cols] for f in layer.getFeatures())
+        df = pd.DataFrame.from_records(data=datagen, columns=cols)
+        for i in range(len(df)):
+            for j in range(len(df.columns)):
+                if df.iloc[i, j] == None:
+                    df.iloc[i, j] = -999
+        df = df.replace({-999: None})
+        return df
+    
+    def mf_grid_layer(self):
+        output_dir = QSWATMOD_path_dict['org_shps']
+        name_ext_v = 'mf_grid_f.gpkg'
+        output_file_v = os.path.normpath(os.path.join(output_dir, name_ext_v))
+        layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("mf_grid","MODFLOW"), 'ogr')
+        return layer
+
+
+
+    def copy_columns(self, source_db, destination_db, source_table, destination_table, columns):
+        """
+        Copies specified columns from a table in one SQLite database to another.
+
+        Args:
+            source_db (str): Path to the source database file.
+            destination_db (str): Path to the destination database file.
+            source_table (str): Name of the table to copy from.
+            destination_table (str): Name of the table to copy to.
+            columns (list): A list of column names to copy.
+        """
+        try:
+            source_conn = sqlite3.connect(source_db)
+            dest_conn = sqlite3.connect(destination_db)
+            source_cursor = source_conn.cursor()
+            dest_cursor = dest_conn.cursor()
+            
+            # Construct the SELECT query
+            columns_str = ', '.join(columns)
+            select_query = f"SELECT {columns_str} FROM {source_table}"
+
+            # Fetch data from the source database
+            source_cursor.execute(select_query)
+            rows = source_cursor.fetchall()
+
+            # Construct the INSERT query
+            placeholders = ', '.join(['?'] * len(columns))
+            insert_query = f"INSERT INTO {destination_table} ({columns_str}) VALUES ({placeholders})"
+
+            # Insert data into the destination database
+            dest_cursor.executemany(insert_query, rows)
+            dest_conn.commit()
+
+            print(f"Successfully copied columns {columns} from {source_table} to {destination_table}")
+
+        except sqlite3.Error as e:
+            print(f"An error occurred: {e}")
+        finally:
+            if source_conn:
+                source_conn.close()
+            if dest_conn:
+                dest_conn.close()
+
+
+    def check_mf_db(self):
+        # Check if the database file exists
+        db_path = QSWATMOD_path_dict['db_files']
+        db_file = os.path.join(db_path, 'mf.db')
+        if not os.path.exists(db_file):
+            layer = self.mf_grid_layer()
+            df = self.get_attribute_to_dataframe(layer)
+            conn = sqlite3.connect(os.path.join(db_file, 'mf.db'))
+            df.to_sql('mf_db', conn, if_exists='replace', index=False)
+            conn.close()
+
+    def check_mf_db_columns(self):
+        db_path = QSWATMOD_path_dict['db_files']
+        # Check if the columns exist in the database
+        conn = sqlite3.connect(os.path.join(db_path, 'mf.db'))
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(mf_db)")
+        # Fetch all columns from the table
+        columns_info = cursor.fetchall()
+        conn.close()
+        colnams = [col[1] for col in columns_info]
+        # Check if the required columns exist
+
+        if 'top_elev' not in colnams:
+            # If not, create the column and set default values
+            layer = self.mf_grid_layer()
+            df = self.get_attribute_to_dataframe(layer)
+            df.to_sql('mf_db', conn, if_exists='replace', index=False)
+            conn.close()
+
 
 
     def DB_Update_Project(self):

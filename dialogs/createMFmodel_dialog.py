@@ -114,26 +114,28 @@ class createMFmodelDialog(QDialog, FORM_CLASS):
     def dirs_and_paths(self):
         global QSWATMOD_path_dict
         # project places
-        Projectfolder = QgsProject.instance().readPath("./")
-        proj = QgsProject.instance()
+        Projectfolder = QgsProject.instance().readPath("./") 
+        proj = QgsProject.instance() 
         Project_Name = QFileInfo(proj.fileName()).baseName()
+
         # definition of folders
         org_shps = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "GIS/org_shps")
         SMshps = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "GIS/SMshps")
         SMfolder = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "SWAT-MODFLOW")
         Table = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "GIS/Table")
         SM_exes = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "SM_exes")
-        exported_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "exported_files")        
-        db_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "DB")        
+        exported_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "exported_files")
+        scn_folder = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "Scenarios")
+        db_files = os.path.normpath(Projectfolder + "/" + Project_Name + "/" + "DB")  
         QSWATMOD_path_dict = {
-                            'org_shps': org_shps,
-                            'SMshps': SMshps,
-                            'SMfolder': SMfolder,
-                            'Table': Table,
-                            'SM_exes': SM_exes,
-                            'exported_files': exported_files,
-                            'db_files': db_files
-                            }
+                                'org_shps': org_shps,
+                                'SMshps': SMshps,
+                                'SMfolder': SMfolder,
+                                'Table': Table,
+                                'SM_exes': SM_exes,
+                                'exported_files': exported_files,
+                                'Scenarios': scn_folder,
+                                'db_files': db_files}
         return QSWATMOD_path_dict
 
     # TODO: we are going to use sqlite for MODFLOW parameter settings

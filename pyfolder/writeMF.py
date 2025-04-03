@@ -774,7 +774,6 @@ def writeMFmodel(self):
                 evt_Data = float(self.lineEdit_evt_single.text())
                 time = datetime.datetime.now().strftime('[%m/%d/%y %H:%M:%S]')
                 self.textEdit_mf_log.append(time+' -> ' + 'Single EVT value is used...')
-
             elif (self.radioButton_evt_raster.isChecked() and self.lineEdit_evt_raster.text()):
                 evt = QgsProject.instance().mapLayersByName("evt (MODFLOW)")[0]
                 evt_Ds = gdal.Open(evt.source())
