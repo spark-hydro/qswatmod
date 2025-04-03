@@ -33,13 +33,6 @@ def end_time(self, desc):
     self.dlg.progressBar_step.setValue(100)
     QCoreApplication.processEvents()
 
-def messageBox(self, title, message):
-    msgBox = QMessageBox()
-    msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))  
-    msgBox.setWindowTitle(title)
-    msgBox.setText(message)
-    msgBox.exec_()
-
 def get_attribute_to_dataframe(self, layer):
     #List all columns you want to include in the dataframe. I include all with:
     cols = [f.name() for f in layer.fields()] #Or list them manually: ['kommunnamn', 'kkod', ... ]
@@ -80,6 +73,15 @@ def delete_layers(self, layernames):
                 QgsProject.instance().removeMapLayers([lyr.id()])
     self.iface.mapCanvas().refreshAllLayers()
 
+def delete_fields(self, layername, character):
+    layer = QgsProject.instance().mapLayersByName(layername)[0]
+    provider = layer.dataProvider()
+    fdname = [
+        provider.fields().indexFromName(field.name()) for field in provider.fields()
+        if character in field.name()
+        ]
+    provider.deleteAttributes(fdname)
+    layer.updateFields()
 
 
 def calculate_area(self, input_layer, var_name, out_name):
@@ -283,7 +285,7 @@ def create_dhru_id(self):
     end_time(self, "Creating 'dhru ID'")
     self.iface.mapCanvas().refreshAllLayers()
     
-def cvt_vl_to_gpkg(self, layernam, output_file):
+def cvt_vl_to_gpkg(self, layernam, output_file, group="SWAT-MODFLOW"):
     QSWATMOD_path_dict = self.dirs_and_paths()
     output_dir = QSWATMOD_path_dict['SMshps']
     layer = QgsProject.instance().mapLayersByName(layernam)[0]
@@ -291,7 +293,8 @@ def cvt_vl_to_gpkg(self, layernam, output_file):
     layer.selectAll()
     params = {
         'INPUT': layer,
-        'OUTPUT': layer_gpkg
+        'OUTPUT': layer_gpkg,
+        'OVERWRITE': True,
     }
     processing.run("native:saveselectedfeatures", params)
     layer.removeSelection()
@@ -303,13 +306,10 @@ def cvt_vl_to_gpkg(self, layernam, output_file):
             QgsProject.instance().removeMapLayers([lyr.id()])
     # Put in the group
     root = QgsProject.instance().layerTreeRoot()
-    sm_group = root.findGroup("SWAT-MODFLOW")
+    sm_group = root.findGroup(f"{group}")
     QgsProject.instance().addMapLayer(outlayer, False)
     sm_group.insertChildNode(1, QgsLayerTreeLayer(outlayer))
     self.iface.mapCanvas().refreshAllLayers()
-
-
-
 
 
 # processing.run(
@@ -433,13 +433,7 @@ def river_grid(self): #step 1
         input1 = QgsProject.instance().mapLayersByName("riv (SWAT)")[0]
         input2 = QgsProject.instance().mapLayersByName("mf_riv3 (MODFLOW)")[0]
     else:
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-        msgBox.setMaximumSize(1000, 200) # resize not working
-        msgBox.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) # resize not working
-        msgBox.setWindowTitle("Hello?")
-        msgBox.setText("Please, select one of the river options!")
-        msgBox.exec_()
+        self.main_messageBox("Hello?", "Please, select one of the river options!")
 
     name = "river_grid"
     name_ext = "river_grid.gpkg"
@@ -1258,8 +1252,4 @@ def create_rt3d_grid(self):
         rt3d_inputs = root.findGroup("RT3D")   
         QgsProject.instance().addMapLayer(layer, False)
         rt3d_inputs.insertChildNode(0, QgsLayerTreeLayer(layer))
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QIcon(':/QSWATMOD/pics/am_icon.png'))
-        msgBox.setWindowTitle("Created!")
-        msgBox.setText("'rt3d_grid.shp' file has been created in 'RT3D' group!")
-        msgBox.exec_()
+        self.main_messageBox("Created!", "'rt3d_grid.shp' file has been created in 'RT3D' group!")

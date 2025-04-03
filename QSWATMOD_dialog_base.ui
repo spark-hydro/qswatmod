@@ -45,7 +45,7 @@
       <bool>true</bool>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="General">
       <attribute name="title">
@@ -4712,7 +4712,7 @@ SWAT-MODFLOW Simulation</string>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="groupBox_7">
+            <widget class="QGroupBox" name="groupBox_grid_results">
              <property name="font">
               <font>
                <weight>75</weight>
@@ -7821,17 +7821,17 @@ SWAT-MODFLOW Simulation</string>
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup_drain_active"/>
   <buttongroup name="buttonGroup_rt_perc_conc"/>
-  <buttongroup name="buttonGroup_RT3D_active"/>
+  <buttongroup name="buttonGroup_irrig_swat_active"/>
   <buttongroup name="buttonGroup_str_obd"/>
-  <buttongroup name="buttonGroup_wt_obd"/>
+  <buttongroup name="buttonGroup_drain_active"/>
+  <buttongroup name="buttonGroup_mf_active"/>
   <buttongroup name="buttonGroup_mf_swat"/>
   <buttongroup name="buttonGroup_irrig_active"/>
   <buttongroup name="buttonGroup_head_recharge"/>
-  <buttongroup name="buttonGroup_rt3d_map"/>
+  <buttongroup name="buttonGroup_RT3D_active"/>
   <buttongroup name="buttonGroup_gw_delay"/>
-  <buttongroup name="buttonGroup_irrig_swat_active"/>
-  <buttongroup name="buttonGroup_mf_active"/>
+  <buttongroup name="buttonGroup_rt3d_map"/>
+  <buttongroup name="buttonGroup_wt_obd"/>
  </buttongroups>
 </ui>

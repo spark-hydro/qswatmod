@@ -230,7 +230,7 @@ def cvt_geovarToR(self, geovar, geovar_group="MODFLOW"):
     start_time(self, desc)
     QSWATMOD_path_dict = self.dirs_and_paths()
     for lyr in list(QgsProject.instance().mapLayers().values()):
-        if lyr.name() == (f"{geovar} ({geovar_group}"):
+        if lyr.name() == f"{geovar} ({geovar_group})":
             QgsProject.instance().removeMapLayers([lyr.id()])
     extlayer = self.mf_grid_layer()
     input1 = self.mf_act_grid_layer()
@@ -774,7 +774,6 @@ def writeMFmodel(self):
                 evt_Data = float(self.lineEdit_evt_single.text())
                 time = datetime.datetime.now().strftime('[%m/%d/%y %H:%M:%S]')
                 self.textEdit_mf_log.append(time+' -> ' + 'Single EVT value is used...')
-
             elif (self.radioButton_evt_raster.isChecked() and self.lineEdit_evt_raster.text()):
                 evt = QgsProject.instance().mapLayersByName("evt (MODFLOW)")[0]
                 evt_Ds = gdal.Open(evt.source())

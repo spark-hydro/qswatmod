@@ -59,7 +59,6 @@ def create_conv_runoff(self):
         input2 = QgsProject.instance().mapLayersByName("conv_runoff")[0]
         fields = input2.dataProvider()
 
-        # DEBUG: fixed: AttributeError: 'QgsVectorDataProvider' object has no attribute 'indexFromName' 
         fdname = [
                 fields.fields().indexFromName(field.name()) for field in fields.fields()
                 if not field.name() == 'Subbasin'

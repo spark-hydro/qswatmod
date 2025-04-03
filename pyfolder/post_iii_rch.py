@@ -20,6 +20,35 @@ import processing
 from qgis.gui import QgsMapCanvas
 import glob
 from PIL import Image
+import sqlite3
+from ..pyfolder import linking_process
+
+
+def save_grid_as_vl(self, outnam):
+    self.delete_layers([outnam])
+
+    layer = QgsProject.instance().mapLayersByName("mf_grid (MODFLOW)")[0]
+    layer.selectAll()
+    params = {
+        'INPUT': layer,
+        'OUTPUT': f"memory:{outnam}"
+    }
+    outlayer = processing.run("native:saveselectedfeatures", params)['OUTPUT']
+    layer.removeSelection()
+
+    # Put in the group
+    for lyr in list(QgsProject.instance().mapLayers().values()):
+        if lyr.name() == (outlayer):
+            QgsProject.instance().removeMapLayers([lyr.id()])
+    # Put in the group
+    root = QgsProject.instance().layerTreeRoot()
+    if root.findGroup("swatmf_results"):
+        sm_group = root.findGroup("swatmf_results")
+    else:
+        sm_group = root.insertGroup(0, "swatmf_results")
+    sm_group = root.findGroup("swatmf_results")
+    QgsProject.instance().addMapLayer(outlayer, False)
+    sm_group.insertChildNode(1, QgsLayerTreeLayer(outlayer))
 
 
 def read_mf_recharge_dates(self):
@@ -27,278 +56,108 @@ def read_mf_recharge_dates(self):
     stdate, eddate, stdate_warmup, eddate_warmup = self.define_sim_period()
     wd = QSWATMOD_path_dict['SMfolder']
     startDate = stdate.strftime("%m-%d-%Y")
-    
-    # Create swatmf_results tree inside 
-    root = QgsProject.instance().layerTreeRoot()
-    if root.findGroup("swatmf_results"):
-        swatmf_results = root.findGroup("swatmf_results")
-    else:
-        swatmf_results = root.insertGroup(0, "swatmf_results")
+    try:
+        if self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_d.isChecked():
+            filename = "swatmf_out_MF_recharge"
+            # Open "swatmf_out_MF_recharge" file
+            y = ("MODFLOW", "--Calculated", "daily") # Remove unnecssary lines
+            with open(os.path.join(wd, filename), "r") as f:
+                data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)]  # Remove blank lines
+            date = [x.strip().split() for x in data if x.strip().startswith("Day:")] # Collect only lines with dates
+            onlyDate = [x[1] for x in date] # Only date
+            # data1 = [x.split() for x in data] # make each line a list
+            sdate = datetime.datetime.strptime(startDate, "%m-%d-%Y")  # Change startDate format
+            # dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%m-%d-%Y") for i in onlyDate]
+            dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%Y-%m-%d") for i in onlyDate]
 
-    input1 = QgsProject.instance().mapLayersByName("mf_grid (MODFLOW)")[0]
-    provider = input1.dataProvider()
-
-    if self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_d.isChecked():
-        filename = "swatmf_out_MF_recharge"
-
-        # Open "swatmf_out_MF_recharge" file
-        y = ("MODFLOW", "--Calculated", "daily") # Remove unnecssary lines
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)]  # Remove blank lines
-        date = [x.strip().split() for x in data if x.strip().startswith("Day:")] # Collect only lines with dates
-        onlyDate = [x[1] for x in date] # Only date
-        # data1 = [x.split() for x in data] # make each line a list
-        sdate = datetime.datetime.strptime(startDate, "%m-%d-%Y")  # Change startDate format
-        dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%m-%d-%Y") for i in onlyDate]
+        elif self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_m.isChecked():
+            filename = "swatmf_out_MF_recharge_monthly"
+            # Open "swatmf_out_MF_recharge" file
+            y = ("Monthly") # Remove unnecssary lines
+            with open(os.path.join(wd, filename), "r") as f:
+                data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
+            date = [x.strip().split() for x in data if x.strip().startswith("month:")] # Collect only lines with dates
+            onlyDate = [x[1] for x in date] # Only date
+            # data1 = [x.split() for x in data] # make each line a list
+            dateList = pd.date_range(startDate, periods=len(onlyDate), freq='ME').strftime("%b-%Y").tolist()
+     
+        elif self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_y.isChecked():
+            filename = "swatmf_out_MF_recharge_yearly"
+            # Open "swatmf_out_MF_recharge" file
+            y = ("Yearly") # Remove unnecssary lines
+            with open(os.path.join(wd, filename), "r") as f:
+                data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
+            date = [x.strip().split() for x in data if x.strip().startswith("year:")] # Collect only lines with dates
+            onlyDate = [x[1] for x in date] # Only date
+            # data1 = [x.split() for x in data] # make each line a list
+            dateList = pd.date_range(startDate, periods = len(onlyDate), freq = 'YE').strftime("%Y").tolist()
         self.dlg.comboBox_mf_results_sdate.clear()
         self.dlg.comboBox_mf_results_sdate.addItems(dateList)
         self.dlg.comboBox_mf_results_edate.clear()
         self.dlg.comboBox_mf_results_edate.addItems(dateList)
         self.dlg.comboBox_mf_results_edate.setCurrentIndex(len(dateList)-1)
-
-        # Copy mf_grid shapefile to swatmf_results tree
-        name_ext = "mf_rch_daily.gpkg"
-        output_dir = QSWATMOD_path_dict['SMshps']
-
-        # Check if there is an exsting mf_recharge shapefile
-        if not any(lyr.name() == ("mf_rch_daily") for lyr in list(QgsProject.instance().mapLayers().values())):
-            mf_rch_shapfile = os.path.join(output_dir, name_ext)
-            # overwrite option
-            options = QgsVectorFileWriter.SaveVectorOptions()
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-            QgsVectorFileWriter.writeAsVectorFormat(input1, mf_rch_shapfile, options)
-            layer = QgsVectorLayer(mf_rch_shapfile, '{0}'.format("mf_rch_daily"), 'ogr')
-            # Put in the group
-            root = QgsProject.instance().layerTreeRoot()
-            swatmf_results = root.findGroup("swatmf_results")   
-            QgsProject.instance().addMapLayer(layer, False)
-            swatmf_results.insertChildNode(0, QgsLayerTreeLayer(layer))
-
-            msgBox = QMessageBox()
-            msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-            msgBox.setWindowTitle("Created!")
-            msgBox.setText("'mf_rch_daily.gpkg' file is created in 'swatmf_results' group!")
-            msgBox.exec_()
-
-    elif self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_m.isChecked():
-        filename = "swatmf_out_MF_recharge_monthly"
-
-        # Open "swatmf_out_MF_recharge" file
-        y = ("Monthly") # Remove unnecssary lines
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
-        date = [x.strip().split() for x in data if x.strip().startswith("month:")] # Collect only lines with dates
-        onlyDate = [x[1] for x in date] # Only date
-        # data1 = [x.split() for x in data] # make each line a list
-        dateList = pd.date_range(startDate, periods=len(onlyDate), freq='M').strftime("%b-%Y").tolist()
+    except ValueError:
+        self.main_messageBox("Error!", "Please, select one of the time options!")
         self.dlg.comboBox_mf_results_sdate.clear()
-        self.dlg.comboBox_mf_results_sdate.addItems(dateList)
         self.dlg.comboBox_mf_results_edate.clear()
-        self.dlg.comboBox_mf_results_edate.addItems(dateList)
-        self.dlg.comboBox_mf_results_edate.setCurrentIndex(len(dateList)-1)
-
-        # Copy mf_grid shapefile to swatmf_results tree
-        name_ext = "mf_rch_monthly.gpkg"
-        output_dir = QSWATMOD_path_dict['SMshps']
-
-        # Check if there is an exsting mf_recharge shapefile
-        if not any(lyr.name() == ("mf_rch_monthly") for lyr in list(QgsProject.instance().mapLayers().values())):
-            mf_rch_shapfile = os.path.join(output_dir, name_ext)
-            options = QgsVectorFileWriter.SaveVectorOptions()
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-            QgsVectorFileWriter.writeAsVectorFormat(input1, mf_rch_shapfile, options)
-            layer = QgsVectorLayer(mf_rch_shapfile, '{0}'.format("mf_rch_monthly"), 'ogr')
-
-            # Put in the group
-            root = QgsProject.instance().layerTreeRoot()
-            swatmf_results = root.findGroup("swatmf_results")   
-            QgsProject.instance().addMapLayer(layer, False)
-            swatmf_results.insertChildNode(0, QgsLayerTreeLayer(layer))
-
-            msgBox = QMessageBox()
-            msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-            msgBox.setWindowTitle("Created!")
-            msgBox.setText("'mf_rch_monthly.gpkg' file is created in 'swatmf_results' group!")
-            msgBox.exec_()      
-
-    elif self.dlg.checkBox_recharge.isChecked() and self.dlg.radioButton_mf_results_y.isChecked():
-        filename = "swatmf_out_MF_recharge_yearly"
-
-        # Open "swatmf_out_MF_recharge" file
-        y = ("Yearly") # Remove unnecssary lines
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
-        date = [x.strip().split() for x in data if x.strip().startswith("year:")] # Collect only lines with dates
-        onlyDate = [x[1] for x in date] # Only date
-        # data1 = [x.split() for x in data] # make each line a list
-        dateList = pd.date_range(startDate, periods = len(onlyDate), freq = 'A').strftime("%Y").tolist()
-        self.dlg.comboBox_mf_results_sdate.clear()
-        self.dlg.comboBox_mf_results_sdate.addItems(dateList)
-        self.dlg.comboBox_mf_results_edate.clear()
-        self.dlg.comboBox_mf_results_edate.addItems(dateList)
-        self.dlg.comboBox_mf_results_edate.setCurrentIndex(len(dateList)-1)
-
-        # Copy mf_grid shapefile to swatmf_results tree
-        name_ext = "mf_rch_yearly.gpkg"
-        output_dir = QSWATMOD_path_dict['SMshps']
-
-        # Check if there is an exsting mf_recharge shapefile
-        if not any(lyr.name() == ("mf_rch_yearly") for lyr in list(QgsProject.instance().mapLayers().values())):
-            mf_rch_shapfile = os.path.join(output_dir, name_ext)
-            options = QgsVectorFileWriter.SaveVectorOptions()
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-            QgsVectorFileWriter.writeAsVectorFormat(input1, mf_rch_shapfile, options)
-            layer = QgsVectorLayer(mf_rch_shapfile, '{0}'.format("mf_rch_yearly"), 'ogr')
-
-            # Put in the group
-            root = QgsProject.instance().layerTreeRoot()
-            swatmf_results = root.findGroup("swatmf_results")   
-            QgsProject.instance().addMapLayer(layer, False)
-            swatmf_results.insertChildNode(0, QgsLayerTreeLayer(layer))
-
-            msgBox = QMessageBox()
-            msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-            msgBox.setWindowTitle("Created!")
-            msgBox.setText("'mf_rch_yearly.gpkg' file is created in 'swatmf_results' group!")
-            msgBox.exec_()      
-
-    else:
-        self.dlg.comboBox_mf_results_sdate.clear()
 
 
-def export_mf_recharge (self):
+
+def create_grid_result_tables(self, tablename, df):
     QSWATMOD_path_dict = self.dirs_and_paths()
-    stdate, eddate, stdate_warmup, eddate_warmup = self.define_sim_period()
-    wd = QSWATMOD_path_dict['SMfolder']
-    startDate = stdate.strftime("%m-%d-%Y")
+    wd = QSWATMOD_path_dict['db_files']
+    conn = sqlite3.connect(os.path.join(wd, 'mf.db'))
+    cursor = conn.cursor()
+    # Original table name
+    original_table = 'mf_db'
+    # New table name
+    # Create the duplicate table with data
+    query1 = f"""
+    DROP TABLE IF EXISTS {tablename}
+    """
+    cursor.execute(query1)
+    query2 = f"""
+    CREATE TABLE {tablename} AS SELECT * FROM {original_table}
+    """    
+    cursor.execute(query2)
+    conn.commit()
 
-    # Open "swatmf_out_MF_recharge" file
-    y = ("MODFLOW", "--Calculated", "daily", "Monthly", "Yearly") # Remove unnecssary lines
+    query3 = f"""
+    SELECT * FROM {tablename}
+    """
+    sqlite_df = pd.read_sql_query(query3, conn)
+    merged_df = pd.merge(sqlite_df, df, on='grid_id', how='left')
+    merged_df.to_sql(tablename, conn, if_exists='replace', index=False)
+    # Close the connection
+    conn.close()
 
+
+def export_mf_recharge(self):
+    self.dlg.progressBar_mf_results.setValue(0)
     if self.dlg.radioButton_mf_results_d.isChecked():
-        filename = "swatmf_out_MF_recharge"
-        self.layer = QgsProject.instance().mapLayersByName("mf_rch_daily")[0]
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
-        date = [x.strip().split() for x in data if x.strip().startswith("Day:")] # Collect only lines with dates
-        onlyDate = [x[1] for x in date] # Only date
-        data1 = [x.split() for x in data] # make each line a list
-        sdate = datetime.datetime.strptime(startDate, "%m-%d-%Y") # Change startDate format
-        dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%m-%d-%Y") for i in onlyDate]
+        layernam = "mf_recharge_day"
     elif self.dlg.radioButton_mf_results_m.isChecked():
-        filename = "swatmf_out_MF_recharge_monthly"
-        self.layer = QgsProject.instance().mapLayersByName("mf_rch_monthly")[0]
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines     
-        date = [x.strip().split() for x in data if x.strip().startswith("month:")] # Collect only lines with dates  
-        onlyDate = [x[1] for x in date] # Only date
-        data1 = [x.split() for x in data] # make each line a list
-        dateList = pd.date_range(startDate, periods=len(onlyDate), freq ='M').strftime("%b-%Y").tolist()
+        layernam = "mf_recharge_mon"
     elif self.dlg.radioButton_mf_results_y.isChecked():
-        filename = "swatmf_out_MF_recharge_yearly"
-        self.layer = QgsProject.instance().mapLayersByName("mf_rch_yearly")[0]
-        with open(os.path.join(wd, filename), "r") as f:
-            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
-        date = [x.strip().split() for x in data if x.strip().startswith("year:")] # Collect only lines with dates
-        onlyDate = [x[1] for x in date] # Only date
-        data1 = [x.split() for x in data] # make each line a list
-        dateList = pd.date_range(startDate, periods=len(onlyDate), freq='A').strftime("%Y").tolist()
-    else:
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-        msgBox.setWindowTitle("Oops!")
-        msgBox.setText("Please, select one of the time options!")
-        msgBox.exec_()  
-
-    selectedSdate = self.dlg.comboBox_mf_results_sdate.currentText()
-    selectedEdate = self.dlg.comboBox_mf_results_edate.currentText()
-
-    # Reverse step
-    dateSidx = dateList.index(selectedSdate)
-    dateEidx = dateList.index(selectedEdate)
-    dateList_f = dateList[dateSidx:dateEidx+1]
-
-    input1 = QgsProject.instance().mapLayersByName("mf_grid (MODFLOW)")[0] # Put this here to know number of features
-
-    per = 0
-    self.dlg.progressBar_mf_results.setValue(0)    
-    for selectedDate in dateList_f:
-
-        # Reverse step
-        dateIdx = dateList.index(selectedDate)
-
-        #only
-        onlyDate_lookup = onlyDate[dateIdx]
-        if self.dlg.radioButton_mf_results_d.isChecked():       
-            for num, line in enumerate(data1, 1):
-                if line[0] == "Day:" in line and line[1] == onlyDate_lookup in line:
-                    ii = num # Starting line
-        elif self.dlg.radioButton_mf_results_m.isChecked():
-            # Find year 
-            dt = datetime.datetime.strptime(selectedDate, "%b-%Y")
-            year = dt.year
-            for num, line in enumerate(data1, 1):
-                if ((line[0] == "month:" in line) and (line[1] == onlyDate_lookup in line) and (line[3] == str(year) in line)):
-                    ii = num # Starting line
-        elif self.dlg.radioButton_mf_results_y.isChecked():     
-            for num, line in enumerate(data1, 1):
-                if line[0] == "year:" in line and line[1] == onlyDate_lookup in line:
-                    ii = num # Starting line
-
-        mf_rchs = []
-        count = 0
-        while count < input1.featureCount():
-            for jj in range(len(data1[ii])):
-                mf_rchs.append(float(data1[ii][jj]))
-                count += 1
-            ii += 1
-
-        provider = self.layer.dataProvider()
-        if self.layer.dataProvider().fields().indexFromName(selectedDate) == -1:
-            field = QgsField(selectedDate, QVariant.Double, 'double', 20, 5)
-            provider.addAttributes([field])
-            self.layer.updateFields()
-
-        mf_rchs_idx = provider.fields().indexFromName(selectedDate)
-
-        tot_feats = self.layer.featureCount()
-        count = 0
-        # Get features (Find out a way to change attribute values using another field)
-        feats = self.layer.getFeatures()
-        self.layer.startEditing()
-
-        # add row number
-        for f, mf_rch in zip(feats, mf_rchs):
-            self.layer.changeAttributeValue(f.id(), mf_rchs_idx, mf_rch)
-            count += 1
-            provalue = round(count/tot_feats*100)
-            self.dlg.progressBar_rch_head.setValue(provalue)
-            QCoreApplication.processEvents()
-        self.layer.commitChanges()
-        QCoreApplication.processEvents()
-
-        # Update progress bar         
-        per += 1
-        progress = round((per / len(dateList_f)) *100)
-        self.dlg.progressBar_mf_results.setValue(progress)
-        QCoreApplication.processEvents()
-        self.dlg.raise_()
-
-    msgBox = QMessageBox()
-    msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-    msgBox.setWindowTitle("Exported!")
-    msgBox.setText("mf_recharge results were exported successfully!")
-    msgBox.exec_()
-
+        layernam = "mf_recharge_year"
+    self.delete_layers([layernam])
+    save_grid_as_vl(self, layernam)
+    grid_result_tname = layernam
+    df = get_grid_recharge_df(self)
+    create_grid_result_tables(self, grid_result_tname, df)
+    join_mf_grid_result(self, layernam, layernam)
+    linking_process.cvt_vl_to_gpkg(
+        self, layernam, f"{layernam}.gpkg", "swatmf_results")
+    linking_process.delete_fields(self, layernam, "_2")
+    self.dlg.progressBar_mf_results.setValue(100)
+    self.main_messageBox(
+        "Exported!", 
+        f"'{layernam}' results were exported successfully!")
 
 
 def get_rech_avg_m_df(self):
-    msgBox = QMessageBox()
-    msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-    msgBox.setWindowTitle("Reading ...")
-    msgBox.setText("We are going to read the 'swatmf_out_MF_recharge_monthly file ...")
-    msgBox.exec_()
-
+    self.dlg.progressBar_rch_head.setValue(0)
+    self.main_messageBox("Reading in progress...", "We are going to read gridded recharge outputs ...")
     QSWATMOD_path_dict = self.dirs_and_paths()
     stdate, eddate, stdate_warmup, eddate_warmup = self.define_sim_period()
     wd = QSWATMOD_path_dict['SMfolder']
@@ -390,13 +249,10 @@ def create_rech_avg_mon_shp(self):
         swatmf_results = root.findGroup("swatmf_results")
         QgsProject.instance().addMapLayer(layer, False)
         swatmf_results.insertChildNode(0, QgsLayerTreeLayer(layer))
-        msgBox = QMessageBox()
-        msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-        msgBox.setWindowTitle("Created!")
-        msgBox.setText("'mf_rch_avg_mon.shp' file has been created in 'swatmf_results' group!")
-        msgBox.exec_()
-        msgBox = QMessageBox()
-
+        self.main_messageBox(
+            "Created!", 
+            "'mf_rch_avg_mon.shp' file has been created in 'swatmf_results' group!")
+        
 def selected_mf_mon(self):
     selected_months = []
     if self.dlg.checkBox_hr_jan.isChecked():
@@ -465,22 +321,154 @@ def export_mf_rch_avg_m(self):
         self.dlg.progressBar_mf_results.setValue(progress)
         QCoreApplication.processEvents()
         self.dlg.raise_()
+    self.main_messageBox("Exported!", "'mf_rch_avg_mon' results were exported successfully!")
 
-    msgBox = QMessageBox()
-    msgBox.setWindowIcon(QtGui.QIcon(':/QSWATMOD2/pics/sm_icon.png'))
-    msgBox.setWindowTitle("Exported!")
-    msgBox.setText("mf_rch_avg_mon results were exported successfully!")
-    msgBox.exec_()
+
+def get_grid_recharge_df(self):
+    self.dlg.progressBar_rch_head.setValue(0)
+    self.main_messageBox("Reading in progress...", "We are going to read gridded recharge outputs ...")
+    QSWATMOD_path_dict = self.dirs_and_paths()
+    stdate, eddate, stdate_warmup, eddate_warmup = self.define_sim_period()
+    wd = QSWATMOD_path_dict['SMfolder']
+    exported_folder = QSWATMOD_path_dict["exported_files"]
+    startDate = stdate.strftime("%m-%d-%Y")
+    # Open "swatmf_out_MF_head" file
+    y = ("Monthly", "Yearly") # Remove unnecssary lines
+
+    if self.dlg.radioButton_mf_results_d.isChecked():
+        y = ("MODFLOW", "--Calculated", "daily", "Monthly", "Yearly") # Remove unnecssary lines
+        filename = "swatmf_out_MF_recharge"
+        with open(os.path.join(wd, filename), "r") as f:
+            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines     
+        date = [x.strip().split() for x in data if x.strip().startswith("Day:")] # Collect only lines with dates  
+        onlyDate = [x[1] for x in date] # Only date
+        data1 = [x.split() for x in data] # make each line a list
+        sdate = datetime.datetime.strptime(startDate, "%m-%d-%Y") # Change startDate format
+        # dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%m-%d-%Y") for i in onlyDate]
+        dateList = [(sdate + datetime.timedelta(days = int(i)-1)).strftime("%Y-%m-%d") for i in onlyDate]
+    elif self.dlg.radioButton_mf_results_m.isChecked():
+        filename = "swatmf_out_MF_recharge_monthly"
+        with open(os.path.join(wd, filename), "r") as f:
+            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines     
+        date = [x.strip().split() for x in data if x.strip().startswith("month:")] # Collect only lines with dates  
+        onlyDate = [x[1] for x in date] # Only date
+        data1 = [x.split() for x in data] # make each line a list
+        dateList = pd.date_range(startDate, periods=len(onlyDate), freq ='ME').strftime("%b-%Y").tolist()
+    elif self.dlg.radioButton_mf_results_y.isChecked():
+        filename = "swatmf_out_MF_recharge_yearly"
+        with open(os.path.join(wd, filename), "r") as f:
+            data = [x.strip() for x in f if x.strip() and not x.strip().startswith(y)] # Remove blank lines
+        date = [x.strip().split() for x in data if x.strip().startswith("year:")] # Collect only lines with dates
+        onlyDate = [x[1] for x in date] # Only date
+        data1 = [x.split() for x in data] # make each line a list
+        dateList = pd.date_range(startDate, periods=len(onlyDate), freq='YE').strftime("%Y").tolist()
+    selectedSdate = self.dlg.comboBox_mf_results_sdate.currentText()
+    selectedEdate = self.dlg.comboBox_mf_results_edate.currentText()
+    # Reverse step
+    dateSidx = dateList.index(selectedSdate)
+    dateEidx = dateList.index(selectedEdate)
+    dateList_f = dateList[dateSidx:dateEidx+1]
+    input1 = QgsProject.instance().mapLayersByName("mf_grid (MODFLOW)")[0] # Put this here to know number of features
+    big_df = pd.DataFrame()
+    datecount = 0
+    for selectedDate in dateList_f:
+        # Reverse step
+        dateIdx = dateList.index(selectedDate)
+        onlyDate_lookup = onlyDate[dateIdx]
+        if self.dlg.radioButton_mf_results_d.isChecked():
+            dt = datetime.datetime.strptime(selectedDate, "%Y-%m-%d")
+            year = dt.year
+            for num, line in enumerate(data1, 1):
+                if line[0] == "Day:" in line and line[1] == onlyDate_lookup in line:
+                    ii = num # Starting line
+        elif self.dlg.radioButton_mf_results_m.isChecked():
+            dt = datetime.datetime.strptime(selectedDate, "%b-%Y")
+            year = dt.year
+            for num, line in enumerate(data1, 1):
+                if ((line[0] == "month:" in line) and (line[1] == onlyDate_lookup in line) and (line[3] == str(year) in line)):
+                    ii = num
+        elif self.dlg.radioButton_mf_results_y.isChecked():
+            dt = datetime.datetime.strptime(selectedDate, "%Y")
+            year = dt.year
+            for num, line in enumerate(data1, 1):
+                if ((line[0] == "year:" in line) and (line[1] == onlyDate_lookup in line)):
+                    ii = num # Starting line
+        # Get the recharge values
+        mf_rchs = []
+        count = 0
+        while count < input1.featureCount():
+            for jj in range(len(data1[ii])):
+                mf_rchs.append(float(data1[ii][jj]))
+                count += 1
+            ii += 1
+        if self.dlg.radioButton_mf_results_d.isChecked():
+            s = pd.Series(mf_rchs, name=datetime.datetime.strptime(selectedDate, "%Y-%m-%d").strftime("%Y-%m-%d"))
+            big_df = pd.concat([big_df, s], axis=1)
+        elif self.dlg.radioButton_mf_results_m.isChecked():
+            s = pd.Series(mf_rchs, name=datetime.datetime.strptime(selectedDate, "%b-%Y").strftime("%b-%Y"))
+            big_df = pd.concat([big_df, s], axis=1)
+        elif self.dlg.radioButton_mf_results_y.isChecked():
+            s = pd.Series(mf_rchs, name=datetime.datetime.strptime(selectedDate, "%Y").strftime("%Y"))
+            big_df = pd.concat([big_df, s], axis=1)
+        datecount +=1
+        provalue = round(datecount/len(dateList_f)*100)
+        self.dlg.progressBar_rch_head.setValue(provalue)
+        QCoreApplication.processEvents()
+        self.dlg.raise_()        
+    big_df.insert(0, 'grid_id', value=range(1, len(big_df) + 1))
+    if self.dlg.radioButton_mf_results_d.isChecked():
+        big_df.to_csv(os.path.join(QSWATMOD_path_dict["exported_files"], "mf_recharge_day_table.csv"), index=False)
+    if self.dlg.radioButton_mf_results_m.isChecked():
+        big_df.to_csv(os.path.join(QSWATMOD_path_dict["exported_files"], "mf_recharge_mon_table.csv"), index=False)
+    elif self.dlg.radioButton_mf_results_y.isChecked():
+        big_df.to_csv(os.path.join(QSWATMOD_path_dict["exported_files"], "mf_recharge_year_table.csv"), index=False)
+    return big_df
+
+
+def join_mf_grid_result(self, layername, tablename):
+
+    # get layer
+    layer = QgsProject.instance().mapLayersByName(layername)[0]
+    QSWATMOD_path_dict = self.dirs_and_paths()
+    db_folder = QSWATMOD_path_dict["db_files"]
+
+    # read mf_db
+    conn = os.path.join(db_folder, 'mf.db')
+
+    params = {
+        'INPUT': layer,
+        'FIELD': 'grid_id',
+        'INPUT_2': conn + f"|layername={tablename}",
+        'FIELD_2': 'grid_id',
+        'FIELDS_TO_COPY': [],
+        'METHOD':1,
+        'DISCARD_NONMATCHING':False,
+        'PREFIX':'',
+        'OUTPUT': f"memory:{layername}",
+        # 'OUTPUT': layer_source,
+        # '--overwrite': True,
+        }
+    outlayer = processing.run("native:joinattributestable", params)['OUTPUT']
+    self.delete_layers([layername])
+    # Put in the group  
+    root = QgsProject.instance().layerTreeRoot()
+    mf_group = root.findGroup("swatmf_results")
+    QgsProject.instance().addMapLayer(outlayer, False)
+    mf_group.insertChildNode(0, QgsLayerTreeLayer(outlayer))
+    # self.end_time(desc)
+
 
 
 def read_vector_maps_hydrology(self):
     layers = [lyr.name() for lyr in list(QgsProject.instance().mapLayers().values())]
     available_layers = [
-                'mf_hd_monthly',
-                'mf_hd_yearly',
-                'mf_rch_monthly',
-                'mf_rch_yearly',
-                'mf_rech_avg_mon',
+                'mf_head_day',
+                'mf_head_mon',
+                'mf_head_year',
+                'mf_recharge_day',
+                'mf_recharege_mon',
+                'mf_recharge_year',
+                'mf_recharge_avg_mon',
                 'base_rd_avg_mon_rech_f'
                 ]
     self.dlg.comboBox_vector_lyrs_mf.clear()
