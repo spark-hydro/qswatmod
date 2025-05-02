@@ -1667,9 +1667,15 @@ class QSWATMOD2(object):
     
     def mf_grid_layer(self):
         output_dir = QSWATMOD_path_dict['org_shps']
+
         name_ext_v = 'mf_grid_f.gpkg'
+        name_ext_o = 'mf_grid.gpkg'
         output_file_v = os.path.normpath(os.path.join(output_dir, name_ext_v))
-        layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("mf_grid","MODFLOW"), 'ogr')
+        output_file_o = os.path.normpath(os.path.join(output_dir, name_ext_o))
+        if os.path.exists(output_file_v) is False:
+            layer = QgsVectorLayer(output_file_o, '{0} ({1})'.format("mf_grid","MODFLOW"), 'ogr')
+        else:
+            layer = QgsVectorLayer(output_file_v, '{0} ({1})'.format("mf_grid","MODFLOW"), 'ogr')
         return layer
 
 
@@ -1750,6 +1756,7 @@ class QSWATMOD2(object):
             # If not, create the column and set default values
             layer = self.mf_grid_layer()
             df = self.get_attribute_to_dataframe(layer)
+            print(df)
             df.to_sql('mf_db', conn, if_exists='replace', index=False)
         conn.close()
 
