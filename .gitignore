@@ -16,3 +16,4 @@ dist
 .trash/
 QSWATMOD2.code-workspace
 unins000.dat
+.DS_Store
