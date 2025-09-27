@@ -1345,6 +1345,15 @@ class QSWATMOD2(object):
                                 'exported_files': exported_files,
                                 'Scenarios': scn_folder,
                                 'db_files': db_files}
+        
+        os.makedirs(org_shps, exist_ok=True)
+        os.makedirs(SMshps, exist_ok=True)
+        os.makedirs(SMfolder, exist_ok=True)
+        os.makedirs(Table, exist_ok=True)
+        os.makedirs(SM_exes, exist_ok=True)
+        os.makedirs(exported_files, exist_ok=True)
+        os.makedirs(scn_folder, exist_ok=True)
+        os.makedirs(db_files, exist_ok=True)
         return QSWATMOD_path_dict
 
     # navigate to the shapefile of the hru
@@ -1610,7 +1619,7 @@ class QSWATMOD2(object):
             required_fields = ["Subbasin", "Len2", "Wid2", "Dep2", "Shape_Leng"]
             linking_process.filter_required_fields(self, "riv (link)", required_fields)
             linking_process.cvt_vl_to_gpkg(self, "riv (link)", "riv_link.gpkg")
-            self.main_messageBox("Done!", "HRU shapefile has been loaded!!")
+            self.main_messageBox("Done!", "River shapefile has been loaded!!")
 
     #----------------------------------------------------------------------------#
     #-----------------------databae features-------------------------------------#
