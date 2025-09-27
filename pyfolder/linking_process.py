@@ -424,13 +424,13 @@ def river_grid(self): #step 1
         if self.lyr.name() == ("river_grid (SWAT-MODFLOW)"):
             QgsProject.instance().removeMapLayers([self.lyr.id()])
     if self.dlg.radioButton_mf_riv1.isChecked():
-        input1 = QgsProject.instance().mapLayersByName("riv (SWAT)")[0]
+        input1 = QgsProject.instance().mapLayersByName("riv (link)")[0]
         input2 = QgsProject.instance().mapLayersByName("mf_riv1 (MODFLOW)")[0]
     elif self.dlg.radioButton_mf_riv2.isChecked():
-        input1 = QgsProject.instance().mapLayersByName("riv (SWAT)")[0]
+        input1 = QgsProject.instance().mapLayersByName("riv (link)")[0]
         input2 = QgsProject.instance().mapLayersByName("mf_riv2 (MODFLOW)")[0]
     elif self.dlg.radioButton_mf_riv3.isChecked():
-        input1 = QgsProject.instance().mapLayersByName("riv (SWAT)")[0]
+        input1 = QgsProject.instance().mapLayersByName("riv (link)")[0]
         input2 = QgsProject.instance().mapLayersByName("mf_riv3 (MODFLOW)")[0]
     else:
         self.main_messageBox("Hello?", "Please, select one of the river options!")
@@ -440,14 +440,26 @@ def river_grid(self): #step 1
     output_dir = QSWATMOD_path_dict['SMshps']
     output_file = os.path.normpath(os.path.join(output_dir, name_ext))
 
+    # intersection syntax have been changed in QGIS 3.40
+    processing.run("native:intersection",
+                {'INPUT': input1,
+                 'OVERLAY': input2,
+                 'INPUT_FIELDS':[],
+                 'OVERLAY_FIELDS':[],
+                 'OVERLAY_FIELDS_PREFIX':'',
+                 'OUTPUT': output_file,
+                 'OVERWRITE': True,
+                 'GRID_SIZE':None})
+
+
     # runinng the actual routine:
-    params = { 
-        'INPUT' : input1,
-        'OVERLAY' : input2, 
-        'OUTPUT' : output_file,
-        'OVERWRITE': True
-    }
-    processing.run('qgis:intersection', params)
+    # params = { 
+    #     'INPUT' : input1,
+    #     'OVERLAY' : input2, 
+    #     'OUTPUT' : output_file,
+    #     'OVERWRITE': True
+    # }
+    # processing.run('native:intersection', params)
     
     # defining the outputfile to be loaded into the canvas        
     # river_grid_shapefile = os.path.join(output_dir, name_ext)
