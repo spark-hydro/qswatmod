@@ -116,7 +116,7 @@ def plot_stf(self, ts):
 def read_output_rch_data(self, wd, colNum=6):
     return pd.read_csv(
         os.path.join(wd, "output.rch"),
-        delim_whitespace=True,
+        sep="\\s+",
         skiprows=9,
         usecols=[1, 3, colNum],
         names=["date", "filter", "stf_sim"],
@@ -166,7 +166,7 @@ def update_index(self, df, startDate):
         df.index = pd.date_range(startDate, periods=len(df.stf_sim))
     elif self.dlg.radioButton_month.isChecked():
         df = df[df['filter'] < 13]
-        df.index = pd.date_range(startDate, periods=len(df.stf_sim), freq="M")
+        df.index = pd.date_range(startDate, periods=len(df.stf_sim), freq="ME")
     else:
         df.index = pd.date_range(startDate, periods=len(df.stf_sim), freq="A")
     return df
