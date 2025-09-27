@@ -6,7 +6,7 @@ def dummpy(wd):
 
     output_rch = pd.read_csv(
         os.path.join(wd, "output.rch"),
-        delim_whitespace=True,
+        sep="\\s+",
         skiprows=9,
         usecols=[1, 3, 6],
         names=["date", "filter", "stf_sim"],
@@ -26,7 +26,7 @@ def date_range_freq(df, startDate):
     #     return pd.date_range(startDate, periods=len(df.stf_sim))
     # elif self.dlg.radioButton_month.isChecked():
     df = df[df['filter'] < 13]
-    df.index = pd.date_range(startDate, periods=len(df.stf_sim), freq="M")
+    df.index = pd.date_range(startDate, periods=len(df.stf_sim), freq="ME")
     print(df)
     # else:
     #     return pd.date_range(startDate, periods=len(df.stf_sim), freq="A")
