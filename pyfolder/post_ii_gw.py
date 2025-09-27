@@ -204,7 +204,7 @@ def time_cvt(self, df, ts):
 def read_swatmf_out_MF_obs(self, wd):
     mf_obs = pd.read_csv(
                         os.path.join(wd, "modflow.obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 2,
                         usecols = [3, 4],
                         index_col = 0,
@@ -213,7 +213,7 @@ def read_swatmf_out_MF_obs(self, wd):
     grid_id_lst = mf_obs.index.astype(str).values.tolist()  
     output_wt = pd.read_csv(
                         os.path.join(wd, "swatmf_out_MF_obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 1,
                         names = grid_id_lst,)
     return mf_obs, output_wt

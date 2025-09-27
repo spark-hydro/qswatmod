@@ -110,7 +110,7 @@ def wt_plot_daily(self):
 
     mf_obs = pd.read_csv(
                         os.path.join(wd, "modflow.obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 2,
                         usecols = [3, 4],
                         index_col = 0,
@@ -131,7 +131,7 @@ def wt_plot_daily(self):
                     na_values=[-999, ""])
         output_wt = pd.read_csv(
                             os.path.join(wd, "swatmf_out_MF_obs"),
-                            delim_whitespace=True,
+                            sep="\\s+",
                             skiprows = 1,
                             names = grid_id_lst,)
         
@@ -236,7 +236,7 @@ def wt_plot_daily(self):
     else:
         output_wt = pd.read_csv(
                             os.path.join(wd, "swatmf_out_MF_obs"),
-                            delim_whitespace=True,
+                            sep="\\s+",
                             skiprows = 1,
                             names = grid_id_lst,)
         try:
@@ -283,7 +283,7 @@ def wt_plot_monthly(self):
     endDate = eddate.strftime("%m/%d/%Y")
 
     mf_obs = pd.read_csv(os.path.join(wd, "modflow.obs"),
-                   delim_whitespace=True,
+                   sep="\\s+",
                    skiprows = 2,
                    usecols = [3, 4],
                    index_col = 0,
@@ -304,7 +304,7 @@ def wt_plot_monthly(self):
                     na_values=[-999, ""])
 
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
         
@@ -412,7 +412,7 @@ def wt_plot_monthly(self):
                     # color = colors[i%4])
     else:
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
 
@@ -461,7 +461,7 @@ def wt_plot_annual(self):
     endDate = eddate.strftime("%m/%d/%Y")
 
     mf_obs = pd.read_csv(os.path.join(wd, "modflow.obs"),
-                   delim_whitespace=True,
+                   sep="\\s+",
                    skiprows = 2,
                    usecols = [3, 4],
                    index_col = 0,
@@ -482,7 +482,7 @@ def wt_plot_annual(self):
                     na_values=[-999, ""])
 
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
         
@@ -590,7 +590,7 @@ def wt_plot_annual(self):
                     # color = colors[i%4])
     else:
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
 
@@ -647,7 +647,7 @@ def export_wt_daily(self):
 
     mf_obs = pd.read_csv(
                         os.path.join(wd, "modflow.obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 2,
                         usecols = [3, 4],
                         index_col = 0,
@@ -668,7 +668,7 @@ def export_wt_daily(self):
 
         output_wt = pd.read_csv(
                                 os.path.join(wd, "swatmf_out_MF_obs"),
-                                delim_whitespace=True,
+                                sep="\\s+",
                                 skiprows=1,
                                 names=grid_id_lst,)
 
@@ -780,7 +780,7 @@ def export_wt_daily(self):
 
     else:
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
 
@@ -853,7 +853,7 @@ def export_wt_monthly(self):
     time = datetime.now().strftime('- %m/%d/%y %H:%M:%S -')
 
     mf_obs = pd.read_csv(os.path.join(wd, "modflow.obs"),
-                   delim_whitespace=True,
+                   sep="\\s+",
                    skiprows = 2,
                    usecols = [3, 4],
                    index_col = 0,
@@ -870,7 +870,7 @@ def export_wt_monthly(self):
                     parse_dates=True,
                     na_values=[-999, ""])
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
         
@@ -982,7 +982,7 @@ def export_wt_monthly(self):
 
     else:
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
 
@@ -1057,7 +1057,7 @@ def export_wt_annual(self):
     time = datetime.now().strftime('- %m/%d/%y %H:%M:%S -')
 
     mf_obs = pd.read_csv(os.path.join(wd, "modflow.obs"),
-                   delim_whitespace=True,
+                   sep="\\s+",
                    skiprows = 2,
                    usecols = [3, 4],
                    index_col = 0,
@@ -1075,7 +1075,7 @@ def export_wt_annual(self):
                     na_values=[-999, ""])
 
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
         
@@ -1189,7 +1189,7 @@ def export_wt_annual(self):
 
     else:
         output_wt = pd.read_csv(os.path.join(wd, "swatmf_out_MF_obs"),
-                           delim_whitespace=True,
+                           sep="\\s+",
                            skiprows = 1,
                            names = grid_id_lst,)
 

@@ -14,7 +14,7 @@ def read_stf_obd(wd, obd_file):
 def read_output_rch_data(wd, colNum=6):
     return pd.read_csv(
         os.path.join(wd, "output.rch"),
-        delim_whitespace=True,
+        sep="\\s+",
         skiprows=9,
         usecols=[1, 3, colNum],
         names=["date", "filter", "stf_sim"],
@@ -34,7 +34,7 @@ def read_gw_obd(wd, obd_file):
 def read_swatmf_out_MF_obs(wd):
     mf_obs = pd.read_csv(
                         os.path.join(wd, "modflow.obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 2,
                         usecols = [3, 4],
                         index_col = 0,
@@ -43,7 +43,7 @@ def read_swatmf_out_MF_obs(wd):
     grid_id_lst = mf_obs.index.astype(str).values.tolist()  
     output_wt = pd.read_csv(
                         os.path.join(wd, "swatmf_out_MF_obs"),
-                        delim_whitespace=True,
+                        sep="\\s+",
                         skiprows = 1,
                         names = grid_id_lst,)
     return mf_obs, output_wt
