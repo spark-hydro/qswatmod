@@ -72,7 +72,7 @@ def read_std_dates(self):
             self.dlg.doubleSpinBox_std_w_exag.setEnabled(True)
             data = pd.DataFrame(date_f)
             data.index = pd.date_range(startDate, periods=len(date_f))
-            dfm = data.resample('M').mean()
+            dfm = data.resample('ME').mean()
             dfmList = dfm.index.strftime("%b-%Y").tolist()
             self.dlg.comboBox_std_sdate.clear()
             self.dlg.comboBox_std_sdate.addItems(dfmList)
@@ -112,7 +112,7 @@ def read_std_dates(self):
             except:
                 pass
         if self.dlg.radioButton_std_month.isChecked():
-            dateList = pd.date_range(startDate, periods=len(dates), freq='M').strftime("%b-%Y").tolist()
+            dateList = pd.date_range(startDate, periods=len(dates), freq='ME').strftime("%b-%Y").tolist()
             self.dlg.comboBox_std_sdate.clear()
             self.dlg.comboBox_std_sdate.addItems(dateList)
             self.dlg.comboBox_std_edate.clear()
@@ -120,7 +120,7 @@ def read_std_dates(self):
             self.dlg.comboBox_std_edate.setCurrentIndex(len(dateList)-1)
         elif self.dlg.radioButton_std_year.isChecked():
             data = pd.DataFrame(dates)
-            data.index = pd.date_range(startDate, periods=len(dates), freq='M')
+            data.index = pd.date_range(startDate, periods=len(dates), freq='ME')
             dfa = data.resample('A').sum()  # .mean() doesn't work!
             dfaList = dfa.index.strftime("%Y").tolist()
             self.dlg.comboBox_std_sdate.clear()
@@ -362,7 +362,7 @@ def plot_wb_dToM_A(self):
     ssdate = self.dlg.comboBox_std_sdate.currentText()
     sedate = self.dlg.comboBox_std_edate.currentText()
     if self.dlg.radioButton_std_month.isChecked():
-        dfm = data.resample('M').mean()
+        dfm = data.resample('ME').mean()
         dff = dfm[ssdate:sedate]
     elif self.dlg.radioButton_std_year.isChecked():
         dfa = data.resample('A').mean()
@@ -593,7 +593,7 @@ def plot_wb_m_mToA(self):
     data = pd.DataFrame(
         np.column_stack([prec, surq, latq, gwq, swgw, perco, tile, sw, gw]),
         columns=names)
-    data.index = pd.date_range(startDate, periods=len(data), freq='M')
+    data.index = pd.date_range(startDate, periods=len(data), freq='ME')
     ssdate = self.dlg.comboBox_std_sdate.currentText()
     sedate = self.dlg.comboBox_std_edate.currentText()
     if self.dlg.radioButton_std_month.isChecked():
@@ -1076,7 +1076,7 @@ def export_wb_d(self):
             dff.to_csv(f, index_label="Date", sep='\t', float_format='%.2f', lineterminator='\n', encoding='utf-8')
         msgBox.setText("'wb_daily.txt' file is exported to your 'exported_files' folder!")
     elif self.dlg.radioButton_std_month.isChecked():
-        dfm = data.resample('M').mean()
+        dfm = data.resample('ME').mean()
         dff = dfm[ssdate:sedate]
         with open(os.path.join(outfolder, "wb_monthly_average.txt"), 'w') as f:
             f.write("# Monthly average water balance [mm] - QSWATMOD2 Plugin " + version + time + "\n")
@@ -1135,7 +1135,7 @@ def export_wb_m(self):
     data = pd.DataFrame(
         np.column_stack([prec, surq, latq, gwq, swgw, perco, tile, sw, gw]),
         columns=names)
-    data.index = pd.date_range(startDate, periods=len(data), freq='M')
+    data.index = pd.date_range(startDate, periods=len(data), freq='ME')
     ssdate = self.dlg.comboBox_std_sdate.currentText()
     sedate = self.dlg.comboBox_std_edate.currentText()
     # Add info
