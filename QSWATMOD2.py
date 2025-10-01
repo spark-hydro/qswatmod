@@ -1017,6 +1017,7 @@ class QSWATMOD2(object):
             # self.define_sim_period()  
             #enables the tabs for project configuration
             # self.tab_enable()
+            self.check_necessary_folders()
 
     def create_swatmf_link(self):
         # duration = runSim_link.define_sim_period(self)
@@ -1200,6 +1201,10 @@ class QSWATMOD2(object):
             sm_group = root.insertGroup(0, "SWAT-MODFLOW")
             self.dirs_and_paths()
             self.mfOptionOn() # enable
+            self.check_necessary_folders()
+
+
+
 
 
     def copyProjectfolder(self):
@@ -1345,16 +1350,15 @@ class QSWATMOD2(object):
                                 'exported_files': exported_files,
                                 'Scenarios': scn_folder,
                                 'db_files': db_files}
-        
-        os.makedirs(org_shps, exist_ok=True)
-        os.makedirs(SMshps, exist_ok=True)
-        os.makedirs(SMfolder, exist_ok=True)
-        os.makedirs(Table, exist_ok=True)
-        os.makedirs(SM_exes, exist_ok=True)
-        os.makedirs(exported_files, exist_ok=True)
-        os.makedirs(scn_folder, exist_ok=True)
-        os.makedirs(db_files, exist_ok=True)
+
         return QSWATMOD_path_dict
+
+
+    def check_necessary_folders(self):
+        QSWATMOD_path_dict = self.dirs_and_paths()
+        for key, path in QSWATMOD_path_dict.items():
+            os.makedirs(path, exist_ok=True)
+
 
     # navigate to the shapefile of the hru
     def hru_shapefile(self):
