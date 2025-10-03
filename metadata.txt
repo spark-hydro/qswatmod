@@ -10,7 +10,7 @@
 name=QSWATMOD2
 qgisMinimumVersion=3.28
 description=This plugin helps link SWAT and MODFLOW model.
-version=2.10.0
+version=2.10.1
 author=Seonggyu Park
 email=seonggyu.park@brc.tamus.edu
 
