@@ -1745,11 +1745,15 @@ class QSWATMOD2(object):
     def check_mf_db(self):
         # Check if the database file exists
         db_path = QSWATMOD_path_dict['db_files']
+        
+        # Ensure the directory exists
+        os.makedirs(db_path, exist_ok=True)
+        
         db_file = os.path.join(db_path, 'mf.db')
         if not os.path.exists(db_file):
             layer = self.mf_grid_layer()
             df = self.get_attribute_to_dataframe(layer)
-            conn = sqlite3.connect(os.path.join(db_file, 'mf.db'))
+            conn = sqlite3.connect(db_file)
             df.to_sql('mf_db', conn, if_exists='replace', index=False)
             conn.close()
 
